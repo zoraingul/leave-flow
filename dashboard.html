@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — LeaveFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="sidebar-root"></div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1>Dashboard</h1>
+      <p id="today-date"></p>
+    </div>
+    <a href="apply-leave.html" class="btn btn-primary">Apply Leave</a>
+  </div>
+
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total Employees</div>
+        <div class="value">148</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Leaves Applied</div>
+        <div class="value yellow">34</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pending Approvals</div>
+        <div class="value red">11</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Approved Leaves</div>
+        <div class="value green">19</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Leaves Per Month — 2025</div>
+        <div class="bar-chart" id="bar-chart"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Leave Type Distribution</div>
+        <div class="dist-list">
+          <div class="dist-row">
+            <div class="dist-dot" style="background:#0d6efd"></div>
+            <span class="dist-name">Casual Leave</span>
+            <span class="dist-pct">42%</span>
+          </div>
+          <div class="dist-row">
+            <div class="dist-dot" style="background:#dc3545"></div>
+            <span class="dist-name">Sick Leave</span>
+            <span class="dist-pct">31%</span>
+          </div>
+          <div class="dist-row">
+            <div class="dist-dot" style="background:#6f42c1"></div>
+            <span class="dist-name">Annual Leave</span>
+            <span class="dist-pct">27%</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="font-size:13px; color:#6c757d;">Based on all leave requests this year</div>
+      </div>
+    </div>
+
+    <!-- Recent table -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <div class="card-title" style="margin:0">Recent Leave Requests</div>
+        <a href="leave-history.html" class="btn btn-outline btn-sm">View All</a>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Leave Type</th>
+            <th>Duration</th>
+            <th>Applied On</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Ayesha Khan</td>
+            <td>HR</td>
+            <td class="type-annual">Annual</td>
+            <td>Oct 10 – Oct 14</td>
+            <td>Oct 5, 2025</td>
+            <td class="status-approved">Approved</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Bilal Ahmed</td>
+            <td>Finance</td>
+            <td class="type-sick">Sick</td>
+            <td>Oct 15</td>
+            <td>Oct 13, 2025</td>
+            <td class="status-pending">Pending</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Sara Malik</td>
+            <td>IT</td>
+            <td class="type-casual">Casual</td>
+            <td>Oct 17</td>
+            <td>Oct 16, 2025</td>
+            <td class="status-approved">Approved</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Omar Farooq</td>
+            <td>Operations</td>
+            <td class="type-annual">Annual</td>
+            <td>Nov 1 – Nov 7</td>
+            <td>Oct 18, 2025</td>
+            <td class="status-pending">Pending</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Nadia Iqbal</td>
+            <td>Marketing</td>
+            <td class="type-sick">Sick</td>
+            <td>Oct 20</td>
+            <td>Oct 19, 2025</td>
+            <td class="status-rejected">Rejected</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+  document.getElementById('sidebar-root').innerHTML = renderSidebar('dashboard');
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  const months = [
+    {m:'Jan',v:18},{m:'Feb',v:12},{m:'Mar',v:22},{m:'Apr',v:15},
+    {m:'May',v:28},{m:'Jun',v:9},{m:'Jul',v:17},{m:'Aug',v:24},
+    {m:'Sep',v:14},{m:'Oct',v:31},{m:'Nov',v:20},{m:'Dec',v:34},
+  ];
+  const max = Math.max(...months.map(m => m.v));
+  document.getElementById('bar-chart').innerHTML = months.map(m => `
+    <div class="bar-row">
+      <span class="bar-label">${m.m}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(m.v/max)*100}%"></div></div>
+      <span class="bar-count">${m.v}</span>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave History — LeaveFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="sidebar-root"></div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1>Leave History</h1>
+      <p>All submitted leave requests</p>
+    </div>
+    <a href="apply-leave.html" class="btn btn-primary">+ Apply Leave</a>
+  </div>
+
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total Applied</div>
+        <div class="value" id="cnt-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pending</div>
+        <div class="value yellow" id="cnt-pending">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Approved</div>
+        <div class="value green" id="cnt-approved">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Rejected</div>
+        <div class="value red" id="cnt-rejected">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar">
+        <input type="text" id="search" placeholder="Search by name or department..." style="padding:6px 12px; border:1px solid #ced4da; border-radius:5px; font-size:13px; width:220px;">
+        <button class="filter-btn active" data-filter="All">All</button>
+        <button class="filter-btn" data-filter="Pending">Pending</button>
+        <button class="filter-btn" data-filter="Approved">Approved</button>
+        <button class="filter-btn" data-filter="Rejected">Rejected</button>
+        <button class="filter-btn" data-filter="Casual">Casual</button>
+        <button class="filter-btn" data-filter="Sick">Sick</button>
+        <button class="filter-btn" data-filter="Annual">Annual</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Employee</th>
+            <th>Emp ID</th>
+            <th>Department</th>
+            <th>Leave Type</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Applied On</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+
+      <div id="no-records" class="empty-state" style="display:none">
+        <div class="es-icon">📭</div>
+        <p>No records found.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+  document.getElementById('sidebar-root').innerHTML = renderSidebar('history');
+
+  const dummy = [
+    { id:1, empId:'ENG-01', name:'Zorain Gul', dept:'Engineering', type:'Casual', from:'2025-10-01', to:'2025-10-03', applied:'Oct 1, 2025',  status:'Pending'  },
+    { id:2, empId:'HR-03',  name:'Ayesha Khan', dept:'HR',          type:'Annual', from:'2025-10-10', to:'2025-10-14', applied:'Oct 5, 2025',  status:'Approved' },
+    { id:3, empId:'FIN-07', name:'Bilal Ahmed', dept:'Finance',     type:'Sick',   from:'2025-10-15', to:'2025-10-15', applied:'Oct 13, 2025', status:'Pending'  },
+  ];
+
+  function getAll() {
+    const stored = JSON.parse(localStorage.getItem('leaves') || '[]');
+    return [...stored, ...dummy];
+  }
+
+  let activeFilter = 'All';
+  let searchTerm = '';
+
+  function render() {
+    let data = getAll();
+    const all = data;
+
+    document.getElementById('cnt-total').textContent    = all.length;
+    document.getElementById('cnt-pending').textContent  = all.filter(l => l.status === 'Pending').length;
+    document.getElementById('cnt-approved').textContent = all.filter(l => l.status === 'Approved').length;
+    document.getElementById('cnt-rejected').textContent = all.filter(l => l.status === 'Rejected').length;
+
+    if (activeFilter !== 'All') {
+      data = data.filter(l => l.status === activeFilter || l.type === activeFilter);
+    }
+    if (searchTerm) {
+      data = data.filter(l =>
+        l.name.toLowerCase().includes(searchTerm) ||
+        l.dept.toLowerCase().includes(searchTerm) ||
+        (l.empId || '').toLowerCase().includes(searchTerm)
+      );
+    }
+
+    const tbody = document.getElementById('history-body');
+    const noRec = document.getElementById('no-records');
+
+    if (!data.length) {
+      tbody.innerHTML = '';
+      noRec.style.display = 'block';
+      return;
+    }
+    noRec.style.display = 'none';
+
+    tbody.innerHTML = data.map((l, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${l.name}</strong></td>
+        <td>${l.empId || '—'}</td>
+        <td>${l.dept}</td>
+        <td class="type-${l.type.toLowerCase()}">${l.type}</td>
+        <td>${l.from}</td>
+        <td>${l.to}</td>
+        <td>${l.applied}</td>
+        <td class="status-${l.status.toLowerCase()}">${l.status}</td>
+      </tr>
+    `).join('');
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  document.getElementById('search').addEventListener('input', e => {
+    searchTerm = e.target.value.toLowerCase();
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approvals — LeaveFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="sidebar-root"></div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1>Approval Center</h1>
+      <p>Department Head &amp; HR — review and manage requests</p>
+    </div>
+    <span style="font-size:13px; color:#6c757d; background:#f8f9fa; padding:6px 12px; border-radius:5px; border:1px solid #dee2e6;">HR Admin View</span>
+  </div>
+
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Pending</div>
+        <div class="value yellow" id="s-pending">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">At Dept. Head</div>
+        <div class="value" id="s-dept">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Approved</div>
+        <div class="value green" id="s-approved">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Rejected</div>
+        <div class="value red" id="s-rejected">0</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('pending', this)">Pending</button>
+      <button class="tab-btn" onclick="switchTab('approved', this)">Approved</button>
+      <button class="tab-btn" onclick="switchTab('rejected', this)">Rejected</button>
+      <button class="tab-btn" onclick="switchTab('all', this)">All Requests</button>
+    </div>
+
+    <div id="requests-list"></div>
+
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+  document.getElementById('sidebar-root').innerHTML = renderSidebar('approval');
+
+  const dummy = [
+    { id:201, empId:'HR-03',  name:'Ayesha Khan',  dept:'HR',          type:'Annual', from:'2025-10-10', to:'2025-10-14', applied:'Oct 5, 2025',  reason:'Family vacation planned in advance', status:'Pending',  stage:'hr'   },
+    { id:202, empId:'FIN-07', name:'Bilal Ahmed',  dept:'Finance',     type:'Sick',   from:'2025-10-15', to:'2025-10-15', applied:'Oct 13, 2025', reason:'Fever and flu symptoms',             status:'Pending',  stage:'dept' },
+    { id:203, empId:'IT-02',  name:'Sara Malik',   dept:'IT',          type:'Casual', from:'2025-10-17', to:'2025-10-17', applied:'Oct 16, 2025', reason:'Personal errand',                    status:'Approved', stage:'done' },
+    { id:204, empId:'OPS-05', name:'Omar Farooq',  dept:'Operations',  type:'Annual', from:'2025-11-01', to:'2025-11-07', applied:'Oct 18, 2025', reason:'International travel with family',   status:'Pending',  stage:'dept' },
+    { id:205, empId:'MKT-01', name:'Nadia Iqbal',  dept:'Marketing',   type:'Sick',   from:'2025-10-20', to:'2025-10-20', applied:'Oct 19, 2025', reason:'Doctor appointment',                 status:'Rejected', stage:'done' },
+    { id:206, empId:'ENG-04', name:'Hasan Raza',   dept:'Engineering', type:'Casual', from:'2025-10-22', to:'2025-10-23', applied:'Oct 20, 2025', reason:'Attending a wedding',                status:'Pending',  stage:'hr'   },
+    { id:207, empId:'HR-02',  name:'Fatima Zahra', dept:'HR',          type:'Annual', from:'2025-12-01', to:'2025-12-10', applied:'Oct 25, 2025', reason:'Year-end vacation',                  status:'Approved', stage:'done' },
+  ];
+
+  function getAll() {
+    const stored = JSON.parse(localStorage.getItem('leaves') || '[]')
+      .map(l => ({ ...l, stage: 'dept', reason: l.reason || '—' }));
+    return [...stored, ...dummy];
+  }
+
+  let currentTab = 'pending';
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentTab = tab;
+    render();
+  }
+
+  function doAction(id, newStatus) {
+    const stored = JSON.parse(localStorage.getItem('leaves') || '[]');
+    const idx = stored.findIndex(l => l.id === id);
+    if (idx !== -1) {
+      stored[idx].status = newStatus;
+      localStorage.setItem('leaves', JSON.stringify(stored));
+    } else {
+      const r = dummy.find(r => r.id === id);
+      if (r) { r.status = newStatus; r.stage = 'done'; }
+    }
+    showToast('Request ' + newStatus.toLowerCase() + ' successfully.', newStatus === 'Approved' ? 'success' : 'error');
+    render();
+  }
+
+  function render() {
+    const all = getAll();
+    const pending  = all.filter(l => l.status === 'Pending');
+    const approved = all.filter(l => l.status === 'Approved');
+    const rejected = all.filter(l => l.status === 'Rejected');
+
+    document.getElementById('s-pending').textContent  = pending.length;
+    document.getElementById('s-approved').textContent = approved.length;
+    document.getElementById('s-rejected').textContent = rejected.length;
+    document.getElementById('s-dept').textContent     = all.filter(l => l.stage === 'dept').length;
+
+    let data = all;
+    if (currentTab === 'pending')  data = pending;
+    if (currentTab === 'approved') data = approved;
+    if (currentTab === 'rejected') data = rejected;
+
+    const container = document.getElementById('requests-list');
+
+    if (!data.length) {
+      container.innerHTML = `<div class="empty-state"><div class="es-icon">📭</div><p>No requests in this category.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = data.map(r => {
+      const typeClass = 'type-' + r.type.toLowerCase();
+      const statusClass = 'status-' + r.status.toLowerCase();
+
+      const pipeline = `
+        <div class="approval-pipeline">
+          <div class="pip-step ${r.stage !== 'dept' ? 'done' : 'active'}">Dept. Head</div>
+          <div class="pip-arrow">→</div>
+          <div class="pip-step ${r.stage === 'hr' ? 'active' : r.stage === 'done' ? 'done' : ''}">HR Admin</div>
+          <div class="pip-arrow">→</div>
+          <div class="pip-step ${r.status === 'Approved' ? 'done' : ''}">Final</div>
+        </div>
+      `;
+
+      return `
+        <div class="request-card">
+          <div style="flex:1">
+            <div class="req-name">${r.name} &nbsp;<span class="${typeClass}" style="font-size:13px; font-weight:600">${r.type} Leave</span></div>
+            <div class="req-meta">${r.empId} &nbsp;|&nbsp; ${r.dept} &nbsp;|&nbsp; ${r.from} → ${r.to} &nbsp;|&nbsp; Applied: ${r.applied}</div>
+            ${r.reason ? `<div class="req-reason">"${r.reason}"</div>` : ''}
+            ${pipeline}
+          </div>
+          <div class="action-col">
+            ${r.status === 'Pending' ? `
+              <button class="btn btn-success btn-sm" onclick="doAction(${r.id}, 'Approved')">Approve</button>
+              <button class="btn btn-danger btn-sm"  onclick="doAction(${r.id}, 'Rejected')">Reject</button>
+            ` : `
+              <span class="${statusClass}">${r.status}</span>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  render();
+</script>
+</body>
+</html>

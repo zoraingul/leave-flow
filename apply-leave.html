@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apply Leave — LeaveFlow</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="sidebar-root"></div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1>Apply Leave</h1>
+      <p>Submit a new leave request</p>
+    </div>
+  </div>
+
+  <div class="content" style="max-width: 760px;">
+
+    <!-- Leave balance -->
+    <div class="balance-strip">
+      <div class="balance-card">
+        <div class="b-val">8</div>
+        <div class="b-label">Casual Days Left</div>
+      </div>
+      <div class="balance-card">
+        <div class="b-val red">5</div>
+        <div class="b-label">Sick Days Left</div>
+      </div>
+      <div class="balance-card">
+        <div class="b-val purple">14</div>
+        <div class="b-label">Annual Days Left</div>
+      </div>
+    </div>
+
+    <div class="card">
+
+      <!-- Employee Details -->
+      <div class="section-title">Employee Details</div>
+      <div class="form-grid" style="margin-bottom: 20px;">
+        <div class="form-group">
+          <label>Employee ID</label>
+          <input type="text" id="emp-id" value="" placeholder="e.g. ENG-01">
+        </div>
+        <div class="form-group">
+          <label>Employee Name</label>
+          <input type="text" id="emp-name" value="" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <select id="dept">
+            <option value="">-- Select Department --</option>
+            <option value="Engineering" selected>Engineering</option>
+            <option value="HR">Human Resources</option>
+            <option value="Finance">Finance</option>
+            <option value="IT">Information Technology</option>
+            <option value="Operations">Operations</option>
+            <option value="Marketing">Marketing</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="email" placeholder="your@email.com">
+        </div>
+      </div>
+
+      <!-- Leave Type -->
+      <div class="section-title">Leave Type</div>
+      <div class="leave-type-grid" style="margin-bottom: 20px;">
+        <div class="leave-type-card selected" data-type="Casual" onclick="selectType(this)">
+          <div class="lt-icon">☀️</div>
+          <div class="lt-name">Casual Leave</div>
+          <div class="lt-desc">Personal or family matters</div>
+        </div>
+        <div class="leave-type-card" data-type="Sick" onclick="selectType(this)">
+          <div class="lt-icon">🏥</div>
+          <div class="lt-name">Sick Leave</div>
+          <div class="lt-desc">Medical or health issues</div>
+        </div>
+        <div class="leave-type-card" data-type="Annual" onclick="selectType(this)">
+          <div class="lt-icon">✈️</div>
+          <div class="lt-name">Annual Leave</div>
+          <div class="lt-desc">Vacation or planned travel</div>
+        </div>
+      </div>
+      <input type="hidden" id="leave-type" value="Casual">
+
+      <!-- Dates -->
+      <div class="section-title">Duration</div>
+      <div class="form-grid" style="margin-bottom: 8px;">
+        <div class="form-group">
+          <label>From Date</label>
+          <input type="date" id="from-date">
+        </div>
+        <div class="form-group">
+          <label>To Date</label>
+          <input type="date" id="to-date">
+        </div>
+      </div>
+      <div id="duration-info" class="text-muted" style="margin-bottom: 20px;"></div>
+
+      <!-- Reason -->
+      <div class="section-title">Reason</div>
+      <div class="form-group full" style="margin-bottom: 20px;">
+        <label>Reason for Leave</label>
+        <textarea id="reason" placeholder="Briefly describe the reason for your leave request..."></textarea>
+      </div>
+
+      <!-- Preview summary -->
+      <div id="summary-wrap" style="display:none; margin-bottom:20px;">
+        <div class="section-title">Request Summary</div>
+        <div class="summary-box" id="summary"></div>
+      </div>
+
+      <div class="flex-gap">
+        <button class="btn btn-primary" onclick="submitLeave()">Submit Request</button>
+        <button class="btn btn-outline" onclick="previewSummary()">Preview</button>
+        <button class="btn btn-outline" onclick="resetForm()">Reset</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+  document.getElementById('sidebar-root').innerHTML = renderSidebar('apply');
+
+  const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  document.getElementById('from-date').value = today;
+  document.getElementById('to-date').value = tomorrow;
+
+  function selectType(el) {
+    document.querySelectorAll('.leave-type-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('leave-type').value = el.dataset.type;
+  }
+
+  function calcDays() {
+    const f = new Date(document.getElementById('from-date').value);
+    const t = new Date(document.getElementById('to-date').value);
+    if (!isNaN(f) && !isNaN(t) && t >= f) {
+      const days = Math.round((t - f) / 86400000) + 1;
+      document.getElementById('duration-info').textContent = days + ' day' + (days !== 1 ? 's' : '') + ' selected';
+    }
+  }
+
+  document.getElementById('from-date').addEventListener('change', calcDays);
+  document.getElementById('to-date').addEventListener('change', calcDays);
+  calcDays();
+
+  function previewSummary() {
+    document.getElementById('summary').innerHTML = `
+      <div class="summary-row"><span class="text-muted">Employee</span><strong>${document.getElementById('emp-name').value} (${document.getElementById('emp-id').value})</strong></div>
+      <div class="summary-row"><span class="text-muted">Department</span><strong>${document.getElementById('dept').value}</strong></div>
+      <div class="summary-row"><span class="text-muted">Leave Type</span><strong>${document.getElementById('leave-type').value} Leave</strong></div>
+      <div class="summary-row"><span class="text-muted">From</span><strong>${document.getElementById('from-date').value}</strong></div>
+      <div class="summary-row"><span class="text-muted">To</span><strong>${document.getElementById('to-date').value}</strong></div>
+      <div class="summary-row"><span class="text-muted">Reason</span><span>${document.getElementById('reason').value || '—'}</span></div>
+    `;
+    document.getElementById('summary-wrap').style.display = 'block';
+  }
+
+  function submitLeave() {
+    const name = document.getElementById('emp-name').value.trim();
+    const dept = document.getElementById('dept').value;
+    const from = document.getElementById('from-date').value;
+    if (!name || !dept || !from) {
+      showToast('Please fill in all required fields.', 'error');
+      return;
+    }
+    const leave = {
+      id: Date.now(),
+      empId: document.getElementById('emp-id').value,
+      name, dept,
+      type: document.getElementById('leave-type').value,
+      from,
+      to: document.getElementById('to-date').value,
+      reason: document.getElementById('reason').value,
+      status: 'Pending',
+      applied: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }),
+    };
+    const all = JSON.parse(localStorage.getItem('leaves') || '[]');
+    all.unshift(leave);
+    localStorage.setItem('leaves', JSON.stringify(all));
+    showToast('Leave request submitted!', 'success');
+    setTimeout(() => { window.location.href = 'leave-history.html'; }, 1400);
+  }
+
+  function resetForm() {
+    document.getElementById('emp-name').value = '';
+    document.getElementById('dept').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('reason').value = '';
+    document.getElementById('summary-wrap').style.display = 'none';
+    showToast('Form cleared.', 'info');
+  }
+</script>
+</body>
+</html>
